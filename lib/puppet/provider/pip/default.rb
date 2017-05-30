@@ -45,8 +45,7 @@ Puppet::Type.type(:pip).provide :default do
 
   def check
     list().detect { |r|
-      r[:package] == @resource[:package]
-      and
+      r[:package] == @resource[:package] and
       r[:ensure] == @resource[:package_version]
     }
   end

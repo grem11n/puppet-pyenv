@@ -11,7 +11,7 @@ Puppet::Type.type(:pip).provide :default do
     if @resource[:package].kind_of?(Array)
       if @resource[:package_version] and @resource[:package_version].kind_of?(Array)
         @resource[:package].zip(@resource[:package_version]) { |p, v| command << p.to_s + v.to_s }
-      elsif @resourse[:package_version].nil? and query
+      elsif @resourse.key?("package_version") and query
         return
       else
         command << @resource[:package]

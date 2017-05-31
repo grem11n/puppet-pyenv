@@ -1,7 +1,7 @@
 require 'puppet/util/execution'
 
 Puppet::Type.type(:pip).provide :default do
-  desc "Maintains programs inside an Pyenv setup"
+  desc 'Maintains programs inside an Pyenv setup'
 
   commands :su => 'su'
 
@@ -9,13 +9,13 @@ Puppet::Type.type(:pip).provide :default do
     command = ['install']
 
     if @resource[:package].kind_of?(Array)
-      if @resource[:package_version] and @resource[:package_version].kind_of?(Array)
-        @resource[:package].zip(@resource[:package_version]) { |p, v| command << p.to_s v.to_s }
+      if @resource[:package_version] && @resource[:package_version].kind_of?(Array)
+        @resource[:package].zip(@resource[:package_version]) { |p, v| command << p.to_s + v.to_s }
       else
         command << @resource[:package]
       end
     else
-      command << @resource[:package] @resource[:package_version].to_s
+      command << @resource[:package] + @resource[:package_version].to_s
     end
 
     execute(command)
@@ -44,14 +44,15 @@ Puppet::Type.type(:pip).provide :default do
   def query
     list().detect { |r|
       r[:package] == @resource[:package]
-    } || {:ensure => :absent}
+    } || { :ensure => :absent }
   end
 
   private
+
   def execute(command)
     command.unshift(pip)
 
-    if !@resource[:python_version].is_a? NilClass
+    unless @resource[:python_version].is_a? NilClass
       command.unshift("PYENV_VERSION=#{resource[:python_version]}")
     end
 
@@ -60,23 +61,21 @@ Puppet::Type.type(:pip).provide :default do
     begin
       su('-', @resource[:user], '-c', cmd)
     rescue Puppet::ExecutionFailure => e
-      if e.message =~ "Requirement already satisfied"
-        return
-      else
-        raise e
-      end
+      return if e.message =~ 'Requirement already satisfied'
+    else
+      raise e
     end
   end
 
   def list(options = {})
     command = ['list']
     packages = execute(command)
-    Array.new.tap do |item|
+    [].new.tap do |item|
       packages.split("\n").each do |package|
         match = /^(.*) \((.*)\)$/.match(package)
         item << {
           :package => match[1],
-          :ensure  => match[2],
+          :ensure  => match[2]
         } if match
       end
     end.compact
